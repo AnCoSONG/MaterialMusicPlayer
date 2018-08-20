@@ -118,6 +118,7 @@ void StandardPlayer::initStandardWidget(){
 //    ui->tableWidget_MYFAVORITE->verticalHeader()->setVisible(false); //设置垂直头不可见
     ui->tableWidget_MYFAVORITE->setContextMenuPolicy(Qt::CustomContextMenu);//设置支持右键菜单
     ui->tableWidget_MYFAVORITE->setFocusPolicy(Qt::NoFocus);
+
     ui->tableWidget_MYFAVORITE->setSelectionMode(QAbstractItemView::ExtendedSelection);//设置支持多选
     ui->tableWidget_MYFAVORITE->verticalScrollBar()->setStyleSheet("QScrollBar{background:white; width: 10px;}"
     "QScrollBar::handle{background:lightgray; border:2px solid transparent; border-radius:5px;}"
@@ -200,6 +201,57 @@ void StandardPlayer::initStandardWidget(){
     connect(ui->pushButton_cancle,SIGNAL(clicked(bool)),this,SLOT(on_pushButton_CANCEL_toggled(bool)));
     connect(ui->pushButton_getPath,SIGNAL(clicked(bool)),this,SLOT(on_pushButton_GETPATH_toggled(bool)));
     connect(ui->pushButton_YES,SIGNAL(clicked(bool)),this,SLOT(on_pushButton_YES_toggled(bool)));
+
+    //获取默认路径下的歌曲 1.4版本新增
+    getLocalMusicFiles();
+
+}
+
+//1.6版本新增
+void StandardPlayer::locatedPlayingMusic(){
+    QTableWidget *temp = SONGLISTTABLELIST->at(currentIndex);
+    for(int i = 0; i < temp->rowCount(); i ++){
+        temp->item(i,0)->setSelected(false);
+    }
+    qDebug()<<PLAYLIST->at(currentIndex)->currentIndex();
+    temp->item(PLAYLIST->at(currentIndex)->currentIndex(),0)->setSelected(true);
+}
+
+//1.4版本新增
+/**
+ * @brief StandardPlayer::getLocalMusicFiles
+ * 清空之前的本地歌单，并将新的路径下的音乐文件添加到本地歌曲
+ */
+void StandardPlayer::getLocalMusicFiles(){
+    ADDEDLIST->at(0)->clear();
+    PLAYLIST->at(0)->clear();
+    ui->tableWidget_MUSICLIST->clearContents();
+    for(int i = ui->tableWidget_MUSICLIST->rowCount();i>0; i --){
+        ui->tableWidget_MUSICLIST->removeRow(0);
+    }
+    QStringList nameFilters;
+    nameFilters <<"*.mp3" <<"*.flac"<<"*.m4a" <<"*.wav";
+    QString path(musicPaths.isEmpty()?QDir::homePath():musicPaths.first());
+    QDir dir(path);
+    QStringList files2Add = dir.entryList(nameFilters,QDir::Files|QDir::Readable,QDir::Name);
+    for(int i = 0; i < files2Add.size(); i ++){
+        qDebug()<<files2Add.at(i);
+        QString tFileName = files2Add.at(i);
+        qDebug()<<path;
+        QString tAbsolutePath;
+        tAbsolutePath = path + "/" + tFileName; //获取绝对路径
+        ADDEDLIST->at(0)->append(tAbsolutePath);  // 添加目录
+        PLAYLIST->at(0)->addMedia(QUrl::fromLocalFile(tAbsolutePath)); //添加歌曲
+        int num = ui->tableWidget_MUSICLIST->rowCount();
+        ui->tableWidget_MUSICLIST->insertRow(num);
+        QTableWidgetItem *musicInfo = new QTableWidgetItem(tFileName);
+        QTableWidgetItem *beizhu = new QTableWidgetItem(QString());
+        musicInfo->setFlags(musicInfo->flags()&(~Qt::ItemIsEditable));
+        ui->tableWidget_MUSICLIST->setItem(num,0,musicInfo);
+        ui->tableWidget_MUSICLIST->setItem(num,1,beizhu);
+
+    }
+    updateSongListTable_primary();
 
 }
 /**
@@ -383,6 +435,8 @@ void StandardPlayer::updateMusicInfo(){
             ui->label_COVER->setPixmap(QPixmap(":/image/icon.png"));
         }
     }
+
+//    locatedPlayingMusic();  不能放在这里
 }
 
 void StandardPlayer::updateMusicPosition(qint64 posi){
@@ -537,9 +591,11 @@ void StandardPlayer::on_pushButton_PLAY_toggled(bool checked)
 {
     if(!PLAYLIST->at(currentIndex)->isEmpty()){
         player->play();
+        locatedPlayingMusic();
     }else{
         QMessageBox::information(this,"提示","当前歌曲列表为空",QMessageBox::Yes);
     }
+
 
 //    if(player->state()==QMediaPlayer::PlayingState){
 //        ui->pushButton_PLAY->hide();
@@ -558,7 +614,24 @@ void StandardPlayer::on_pushButton_NEXTSONG_toggled(bool checked)
 {
     //列表移动到那首歌的位置 那首歌的那一行被选中
     PLAYLIST->at(currentIndex)->next();
+    //1.5版本 加入列表定位
+    int index = PLAYLIST->at(currentIndex)->currentIndex();
+    switch (currentIndex) {
+    case 0:
+        ui->tableWidget_MUSICLIST->scrollToItem(ui->tableWidget_MUSICLIST->item(index,0),QAbstractItemView::PositionAtCenter);
+
+//        ui->tableWidget_MUSICLIST->item(index,0)->setSelected(true);
+        break;
+    case 1:
+        ui->tableWidget_MYFAVORITE->scrollToItem(ui->tableWidget_MYFAVORITE->item(index,0),QAbstractItemView::PositionAtCenter);
+//        ui->tableWidget_MYFAVORITE->item(index,0)->setSelected(true);
+        break;
+    default:
+        break;
+    }
     player->play();
+    locatedPlayingMusic();
+
 
 }
 
@@ -566,7 +639,22 @@ void StandardPlayer::on_pushButton_PRESONG_toggled(bool checked)
 {
     //列表移动到那首歌的位置 那首歌的哪一行被选中
     PLAYLIST->at(currentIndex)->previous();
+    int index = PLAYLIST->at(currentIndex)->currentIndex();
+    switch (currentIndex) {
+    case 0:
+        ui->tableWidget_MUSICLIST->scrollToItem(ui->tableWidget_MUSICLIST->item(index,0),QAbstractItemView::PositionAtCenter);
+//        ui->tableWidget_MUSICLIST->item(index,0)->setSelected(true);
+        break;
+    case 1:
+        ui->tableWidget_MYFAVORITE->scrollToItem(ui->tableWidget_MYFAVORITE->item(index,0),QAbstractItemView::PositionAtCenter);
+//        ui->tableWidget_MYFAVORITE->item(index,0)->setSelected(true);
+
+        break;
+    default:
+        break;
+    }
     player->play();
+    locatedPlayingMusic(); //这个函数必须在播放方法之后执行，否则会闪退
 
 }
 
@@ -686,27 +774,37 @@ void StandardPlayer::on_ContextMenu()
     }
 }
 
-void StandardPlayer::on_RemoveMusics()
+void StandardPlayer::on_RemoveMusics() //删除部分待修复 思路仿照更换目录清空时的思路 删除某一行之后，行数会变化，行标也会变化，这个需要特别注意！
 {
         //获取选中的行标 从0开始
+        qDebug()<<"开始删除";
         QList<QTableWidgetItem*> itemsSelected = SONGLISTTABLELIST->at(currentIndex)->selectedItems();
         qDebug()<<itemsSelected.size();
         QList<int> *indexes = new QList<int>();
         for(int i = 0; i < itemsSelected.size(); i ++){
             int rows = SONGLISTTABLELIST->at(currentIndex)->row(itemsSelected.at(i));
             indexes->append(rows);
-            qDebug()<<rows;
+            qDebug()<<"删第"<<rows<<"行";
         }
-
-        for(int i = 0; i < indexes->size(); i ++){
+        //添加对行数排序的代码
+        std::sort(indexes->begin(),indexes->end());
+        qDebug()<<"排序后";
+        //检查是否完成排序
+        foreach (int i, *indexes) {
+            qDebug()<<i;
+        }
+        //排序完成
+        int rowc = indexes->size();
+        for(int i = 0; i < rowc; i ++){
             int row = indexes->at(i);
-            qDebug()<<row;
-            SONGLISTTABLELIST->at(currentIndex)->removeRow(row);  //从表中删除
-            PLAYLIST->at(currentIndex)->removeMedia(row);//从playlist中删除
+            qDebug()<<"repeat:删第"<<row<<"行";
+            qDebug()<<"实际删除第"<<row-i<<"项";
+            SONGLISTTABLELIST->at(currentIndex)->removeRow(row-i);  //从表中删除
+            PLAYLIST->at(currentIndex)->removeMedia(row-i);//从playlist中删除
             //从路径库中删除
-            ADDEDLIST->at(currentIndex)->removeAt(row);
-            qDebug()<<"当前歌单列表大小"<<SONGLISTTABLELIST->at(currentIndex)->rowCount();
-            qDebug()<<"当前歌单路径库大小"<<ADDEDLIST->at(currentIndex)->size();
+            ADDEDLIST->at(currentIndex)->removeAt(row-i);
+//            qDebug()<<"当前歌单列表大小"<<SONGLISTTABLELIST->at(currentIndex)->rowCount();
+//            qDebug()<<"当前歌单路径库大小"<<ADDEDLIST->at(currentIndex)->size();
             //从json表中删除 if has
         }
         updateSongListTable_primary();//更新歌曲数量
@@ -785,9 +883,13 @@ void StandardPlayer::on_pushButton_SETTING_toggled(bool checked)
 
 void StandardPlayer::on_pushButton_YES_toggled(bool checked)
 {
-
-    //setMusicPath
-    musicPaths.first() = ui->lineEdit->text();
+    //setMusicPath 当路径不同时才执行重新获取文件
+    if(musicPaths.first()!=ui->lineEdit->text()){
+        player->stop();
+        musicPaths.first() = ui->lineEdit->text();
+        //1.4版本新增
+        getLocalMusicFiles();
+    }
 
     //set Playback Rate
 //    player->setPlaybackRate(ui->doubleSpinBox->text().toDouble());
@@ -814,6 +916,7 @@ void StandardPlayer::on_pushButton_YES_toggled(bool checked)
         player->setPlaybackRate(2.00);
     }
     ui->widget_SET->hide();
+
 
 }
 

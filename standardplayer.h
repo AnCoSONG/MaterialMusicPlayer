@@ -30,7 +30,9 @@
 #include <QButtonGroup>
 #include "playerui.h"
 #include "readcover.h"
-
+//修一下播放器列表定位的问题 或者将定位功能单独列出
+//修复删除歌曲功能
+//准备进行大改动:将歌单widget添加进链表
 namespace Ui {
 class StandardPlayer;
 }
@@ -63,7 +65,7 @@ public:
     QMediaPlaylist *myfavorite; //默认的我最喜欢歌单
     QList<QStringList*> *ADDEDLIST; //所有被添加的歌曲的路径 根据index索引到歌单 然后根据 index 访问到具体的路径
     QList<QMediaPlaylist*> *PLAYLIST; //所有歌单的链表
-    QList<QTableWidget*> *SONGLISTTABLELIST;
+    QList<QTableWidget*> *SONGLISTTABLELIST;//存储歌单表格控件的地址
     void initPLAYLIST();
     bool singleWindow = true;
     PLAYERUI::TYPE type = PLAYERUI::STANDARD;
@@ -76,6 +78,8 @@ public:
     void new_updateTable(QString);
     void initMySongListTable();
     void updateSongListTable_primary();
+    void getLocalMusicFiles();//获取当前默认路径的歌曲文件
+    void locatedPlayingMusic();
     //拖拽用方法
     void mouseMoveEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
