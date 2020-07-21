@@ -30,9 +30,15 @@
 #include <QButtonGroup>
 #include "playerui.h"
 #include "readcover.h"
-//修一下播放器列表定位的问题 或者将定位功能单独列出
-//修复删除歌曲功能
+#include "flaccover.h"
+#include "mini.h"
+#include "mp3cover.h"
+//修一下播放器列表自动切歌不定位的问题 修复播放按钮无法滚动的问题
+//修复删除歌曲功能 已修复
 //准备进行大改动:将歌单widget添加进链表
+//1.7 version : add readcover support for flac format 已完成 由于路径的问题还是有一些音乐无法显示专辑
+
+
 namespace Ui {
 class StandardPlayer;
 }
@@ -67,7 +73,7 @@ public:
     QList<QMediaPlaylist*> *PLAYLIST; //所有歌单的链表
     QList<QTableWidget*> *SONGLISTTABLELIST;//存储歌单表格控件的地址
     void initPLAYLIST();
-    bool singleWindow = true;
+    bool singleWindow = false;
     PLAYERUI::TYPE type = PLAYERUI::STANDARD;
     explicit StandardPlayer(QWidget *parent = 0);
     ~StandardPlayer();
@@ -84,6 +90,14 @@ public:
     void mouseMoveEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void mousePressEvent(QMouseEvent*);
+    //FLAC图片获取
+    FLACcover flac;
+
+    //MP3图片获取
+    MP3cover mp3;
+
+    //mini模式
+    Mini *mini;
 
 private slots:
     void on_pushButton_CLOSE_toggled(bool checked); //关闭信号

@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <QTextCodec>
 
+//depracated using mp3cover.readCover(QString)
 int ReadAPICFromMP3(QString Qpath);
 
 

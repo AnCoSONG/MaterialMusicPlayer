@@ -51,10 +51,14 @@ bool isJPEG(const char* data)
 }
 
 
-
+/**
+ * @brief ReadAPICFromMP3 depracated using mp3cover.readCover(QString)
+ * @param tpath
+ * @return
+ */
 int ReadAPICFromMP3(QString tpath)
 {
-    QTextCodec *code = QTextCodec::codecForName("gbk");
+    QTextCodec *code = QTextCodec::codecForName("gb18030");//gb18030 和 gbk都可以
     std::string ts = code->fromUnicode(tpath).data(); //utf8转gdk gb2312
     const char* path = ts.c_str();
     FILE* fp = fopen(path, "rb");

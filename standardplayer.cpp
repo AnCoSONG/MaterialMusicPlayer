@@ -13,7 +13,11 @@ StandardPlayer::StandardPlayer(QWidget *parent) :
 
 StandardPlayer::~StandardPlayer()
 {
+    remove("cover.jpg");
     remove("cover.jpeg");
+    remove("cover.png");
+    remove("cover.gif");
+    remove("cover.bmp");
     delete ui;
 
 }
@@ -25,9 +29,8 @@ StandardPlayer::~StandardPlayer()
 void StandardPlayer::on_pushButton_CLOSE_toggled(bool checked)
 {
     qDebug()<< "close signal";
-    if(singleWindow){//单窗口时
-        int reval = QMessageBox::warning(this,"提示","是要关闭程序还是最小化到托盘?","取消","最小化到托盘","关闭");
-        switch (reval) {
+    int reval = QMessageBox::warning(this,"提示","是要关闭程序还是最小化到托盘?","取消","最小化到托盘","关闭");
+    switch (reval) {
         case 2:
             this->close();
             break;
@@ -43,9 +46,7 @@ void StandardPlayer::on_pushButton_CLOSE_toggled(bool checked)
         default:
             break;
         }
-    }else{ //多窗口时发送信号给高层窗体来操作关闭
-        emit closeSignal();
-    }
+
 }
 
 /**
@@ -205,6 +206,8 @@ void StandardPlayer::initStandardWidget(){
     //获取默认路径下的歌曲 1.4版本新增
     getLocalMusicFiles();
 
+
+
 }
 
 //1.6版本新增
@@ -264,7 +267,12 @@ void StandardPlayer::on_pushButton_SWITCHUI_toggled(bool checked)
     if(singleWindow){
         QMessageBox::information(this,"提示","现在为单UI模式，不支持切换",QMessageBox::Yes);
     }else{
-        emit switchUiSignal(type);
+        //emit switchUiSignal(type);
+        mini = new Mini();
+        mini->createStandard(this);
+        this->hide();
+        mini->show();
+
     }
 }
 
@@ -337,7 +345,7 @@ void StandardPlayer::on_pushButton_ADDMUSIC_toggled(bool checked)
         isRepeated = false;
         QFileInfo tempThisMusicPathMusicName(thisMusicPath.at(j));
         fileExtension = tempThisMusicPathMusicName.completeSuffix();
-        if(fileExtension=="flac"||fileExtension=="wav"||fileExtension=="ape"||fileExtension=="m4a"){
+        if(fileExtension=="wav"||fileExtension=="ape"||fileExtension=="m4a"){
             QMessageBox::warning(this,"警告","非mp3文件暂不支持获取专辑封面",QMessageBox::Yes);
         }else if(fileExtension=="mp3"||fileExtension=="MP3"){
 
@@ -384,7 +392,11 @@ void StandardPlayer::on_player_state_change(QMediaPlayer::State state)
 }
 
 void StandardPlayer::updateMusicInfo(){
+    remove("cover.jpg");
     remove("cover.jpeg");
+    remove("cover.png");
+    remove("cover.gif");
+    remove("cover.bmp");
     if(PLAYLIST->at(currentIndex)->currentIndex()>=0){ //稍稍有些延迟！ 现在可以在无法读出标题解和
         QString titleTemp = player->metaData(QMediaMetaData::Title).toString();
         if(!titleTemp.isNull()){
@@ -425,12 +437,29 @@ void StandardPlayer::updateMusicInfo(){
 
         QString path = ADDEDLIST->at(currentIndex)->at(PLAYLIST->at(currentIndex)->currentIndex()); //这行代码会导致崩溃！！ 由于空列表的情况下currentIndex会返回-1 导致崩溃！！
         //set cover
-        ReadAPICFromMP3(path);
+        if(path.toLower().endsWith(".mp3")){
+            //ReadAPICFromMP3(path);
+            mp3.readCover(path);
+        }else if(path.toLower().endsWith(".flac")){
+            flac.readCover(path);
+        }
         qDebug()<<QPixmap("cover.jpeg").isNull();
         if(!QPixmap("cover.jpeg").isNull()){
             ui->label_COVER->setAlignment(Qt::AlignCenter);
             ui->label_COVER->setPixmap(QPixmap("cover.jpeg").scaled(360,360,Qt::IgnoreAspectRatio,Qt::SmoothTransformation));
-        }else{
+        }else if(!QPixmap("cover.jpg").isNull()){
+            ui->label_COVER->setAlignment(Qt::AlignCenter);
+            ui->label_COVER->setPixmap(QPixmap("cover.jpg").scaled(360,360,Qt::IgnoreAspectRatio,Qt::SmoothTransformation));
+        }else if(!QPixmap("cover.png").isNull()){
+            ui->label_COVER->setAlignment(Qt::AlignCenter);
+            ui->label_COVER->setPixmap(QPixmap("cover.png").scaled(360,360,Qt::IgnoreAspectRatio,Qt::SmoothTransformation));
+        }else if(!QPixmap("cover.gif").isNull()){
+            ui->label_COVER->setAlignment(Qt::AlignCenter);
+            ui->label_COVER->setPixmap(QPixmap("cover.gif").scaled(360,360,Qt::IgnoreAspectRatio,Qt::SmoothTransformation));
+        }else if(!QPixmap("cover.bmp").isNull()){
+            ui->label_COVER->setAlignment(Qt::AlignCenter);
+            ui->label_COVER->setPixmap(QPixmap("cover.bmp").scaled(360,360,Qt::IgnoreAspectRatio,Qt::SmoothTransformation));
+        }else {
             ui->label_COVER->setAlignment(Qt::AlignCenter);
             ui->label_COVER->setPixmap(QPixmap(":/image/icon.png"));
         }

@@ -62,5 +62,10 @@
         <file>ST_POSTER.png</file>
         <file>ST_POSTER_PRESSED.png</file>
         <file>ST_COVERBASE.png</file>
+        <file>MINI_COVER.png</file>
+        <file>DISK.png</file>
+        <file>DISK_LARGE.png</file>
+        <file>DISK2_LARGE.png</file>
+        <file>DISK2_LARGE_TYPE2.png</file>
     </qresource>
 </RCC>

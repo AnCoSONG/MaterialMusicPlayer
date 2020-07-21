@@ -9,10 +9,6 @@ ShadowPower 于2014/8/1 夜间
 
 #ifndef FLACPIC_H
 #define FLACPIC_H
-#define _CRT_SECURE_NO_WARNINGS
-#ifndef NULL
-#define NULL 0
-#endif
 #include <cstdio>
 #include <cstdlib>
 #include <memory.h>
@@ -88,7 +84,6 @@ namespace spFLAC {
         fp = fopen(inFilePath, "rb");
         if (!fp)						//如果打开失败
         {
-            printf("路径错误");
             fp = NULL;
             return false;
         }
@@ -115,7 +110,6 @@ namespace spFLAC {
                     //循环40次没有遇到末尾就直接停止
                     fclose(fp);
                     fp = NULL;
-                    printf("文件异常");
                     return false;					//可能文件不正常
                 }
                 fseek(fp, blockLength, SEEK_CUR);	//跳过数据块
@@ -124,7 +118,6 @@ namespace spFLAC {
                     //已经是最后一个数据块了，仍然不是图片
                     fclose(fp);
                     fp = NULL;
-                    printf("未找到图片");
                     return false;					//没有找到图片数据
                 }
                 //取得下一数据块头部
@@ -163,7 +156,6 @@ namespace spFLAC {
                 //校验文件头
                 if (verificationPictureFormat(tempData))
                 {
-                    printf("获取到文件后缀 %s",picFormat);
                     ok = true;
                     break;
                 }
@@ -182,7 +174,6 @@ namespace spFLAC {
                 fclose(fp);
                 fp = NULL;
                 freePictureData();
-                printf("无法识别的数据");
                 return false;			//无法识别的数据
             }
 
@@ -223,6 +214,32 @@ namespace spFLAC {
         return picFormat;
     }
 
+    bool writeCover(char *filename){
+        FILE *fp = NULL;
+        std::string name;
+        name.append(filename);
+        name.append(".");
+        name.append(picFormat);
+        if (picLength > 0)
+        {
+            fp = fopen(name.c_str(), "wb");		//打开目标文件
+            if (fp)								//打开成功
+            {
+                fwrite(pPicData, picLength, 1, fp);	//写入文件
+                fclose(fp);							//关闭
+                return true;
+            }
+            else
+            {
+                return false;						//文件打开失败
+            }
+        }
+        else
+        {
+            return false;						//没有图像数据
+        }
+    }
+
     bool writePictureDataToFile(const char *outFilePath)
     {
         FILE *fp = NULL;
@@ -246,45 +263,13 @@ namespace spFLAC {
         }
     }
 
-    bool writeCover(char *filename){
-        FILE *fp = NULL;
-        printf("开始获取完整文件名");
-        string name = "";
-        name.append(filename);
-        name.append(".");
-        name.append(picFormat);
-        printf("获取到完整文件名 %s",name.c_str());
-        if(picLength>0){
-            fp = fopen(name.c_str(),"wb");
-            if (fp)								//打开成功
-            {
-                printf("开始写入");
-                fwrite(pPicData, picLength, 1, fp);	//写入文件
-                fclose(fp);							//关闭
-                return true;
-            }
-            else
-            {
-                return false;						//文件打开失败
-            }
-        }
-        else
-        {
-            return false;						//没有图像数据
-        }
-
-
-    }
-
     //提取图片文件，参数1：输入文件，参数2：输出文件，返回值：是否成功
     bool extractPicture(const char *inFilePath, const char *outFilePath)
     {
         if (loadPictureData(inFilePath))	//如果取得图片数据成功
         {
-            printf("读取成功");
             if (writePictureDataToFile(outFilePath))
             {
-                printf("写出成功");
                 return true;				//文件写出成功
             }
             else
@@ -299,13 +284,14 @@ namespace spFLAC {
         freePictureData();
     }
 
-    //自定义的读取图片方法
-    bool readCover(const char *inPath, const char *outName){
-        if(loadPictureData(inPath)){
-            printf("读取成功");
-            if(writeCover((char*)outName)){
-                printf("写出成功");
-                return true;
+    bool readCover(const char * inPath, const char * outName = "cover"){
+        if (loadPictureData(inPath))	//如果取得图片数据成功
+        {
+            std::cout << "读取成功\n";
+            if (writeCover((char*)outName))
+            {
+                std::cout<<"写出成功\n";
+                return true;				//文件写出成功
             }
             else
             {
@@ -316,6 +302,7 @@ namespace spFLAC {
         {
             return false;					//无图片数据
         }
+        freePictureData();
     }
 }
 #endif

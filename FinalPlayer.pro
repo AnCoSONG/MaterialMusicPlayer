@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+RC_ICONS = icon.ico
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets multimedia
 
@@ -28,17 +29,27 @@ SOURCES += \
         standardplayer.cpp \
     textticker.cpp \
     readcover.cpp \
-    songlistwidget.cpp
+    songlistwidget.cpp \
+    flaccover.cpp \
+    mini.cpp \
+    mp3cover.cpp \
+    rotatecover.cpp
 
 HEADERS += \
         standardplayer.h \
     playerui.h \
     textticker.h \
     readcover.h \
-    songlistwidget.h
+    songlistwidget.h \
+    id3v2pic.h \
+    flaccover.h \
+    mini.h \
+    mp3cover.h \
+    rotatecover.h
 
 FORMS += \
-        standardplayer.ui
+        standardplayer.ui \
+    mini.ui
 
 RESOURCES += \
     src.qrc
